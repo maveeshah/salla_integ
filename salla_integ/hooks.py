@@ -89,18 +89,71 @@ app_license = "MIT"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-#	}
-# }
+
+doc_events = {
+	"*": {
+		"after_insert": [
+			"frappe.event_streaming.doctype.event_update_log.event_update_log.notify_consumers"
+		],
+		"on_update": [
+			"frappe.desk.notifications.clear_doctype_notifications",
+			"frappe.core.doctype.activity_log.feed.update_feed",
+			"frappe.workflow.doctype.workflow_action.workflow_action.process_workflow_actions",
+			"frappe.automation.doctype.assignment_rule.assignment_rule.apply",
+			"frappe.core.doctype.file.file.attach_files_to_document",
+			"frappe.event_streaming.doctype.event_update_log.event_update_log.notify_consumers",
+			"frappe.automation.doctype.assignment_rule.assignment_rule.update_due_date",
+			"frappe.core.doctype.user_type.user_type.apply_permissions_for_non_standard_user_type"
+		],
+		"after_rename": "frappe.desk.notifications.clear_doctype_notifications",
+		"on_cancel": [
+			"frappe.desk.notifications.clear_doctype_notifications",
+			"frappe.workflow.doctype.workflow_action.workflow_action.process_workflow_actions"
+		],
+		"on_trash": [
+			"frappe.desk.notifications.clear_doctype_notifications",
+			"frappe.workflow.doctype.workflow_action.workflow_action.process_workflow_actions",
+			"frappe.event_streaming.doctype.event_update_log.event_update_log.notify_consumers"
+		],
+		"on_update_after_submit": [
+			"frappe.workflow.doctype.workflow_action.workflow_action.process_workflow_actions"
+		],
+		"on_change": [
+			"frappe.social.doctype.energy_point_rule.energy_point_rule.process_energy_points",
+			"frappe.automation.doctype.milestone_tracker.milestone_tracker.evaluate_milestone"
+		]
+	},
+	"Event": {
+		"after_insert": "frappe.integrations.doctype.google_calendar.google_calendar.insert_event_in_google_calendar",
+		"on_update": "frappe.integrations.doctype.google_calendar.google_calendar.update_event_in_google_calendar",
+		"on_trash": "frappe.integrations.doctype.google_calendar.google_calendar.delete_event_from_google_calendar",
+	},
+	"Contact": {
+		"after_insert": "frappe.integrations.doctype.google_contacts.google_contacts.insert_contacts_to_google_contacts",
+		"on_update": "frappe.integrations.doctype.google_contacts.google_contacts.update_contacts_to_google_contacts",
+	},
+	"DocType": {
+		"after_insert": "frappe.cache_manager.build_domain_restriced_doctype_cache",
+		"after_save": "frappe.cache_manager.build_domain_restriced_doctype_cache",
+	},
+	"Page": {
+		"after_insert": "frappe.cache_manager.build_domain_restriced_page_cache",
+		"after_save": "frappe.cache_manager.build_domain_restriced_page_cache",
+	}
+}
+
 
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
+scheduler_events = {
+	"cron": {
+		"*/5 * * * *": [
+			"salla_integ.salla_integrations.api.get_customers",
+			"salla_integ.salla_integrations.api.get_orders"
+		]
+	}
+
 # 	"all": [
 # 		"salla_integ.tasks.all"
 # 	],
@@ -115,8 +168,8 @@ app_license = "MIT"
 # 	]
 # 	"monthly": [
 # 		"salla_integ.tasks.monthly"
-# 	]
-# }
+# 	],
+}
 
 # Testing
 # -------
